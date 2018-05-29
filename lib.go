@@ -18,10 +18,6 @@ import (
 	"encoding/json"
 	"bytes"
 	"encoding/xml"
-	"reflect"
-	"github.com/astaxie/beego/context/param"
-	"github.com/astaxie/beego/toolbox"
-	"time"
 )
 
 type Tester struct {
@@ -30,6 +26,10 @@ type Tester struct {
 	control beego.ControllerInterface
 	resp *httptest.ResponseRecorder
 	params map[string]string
+}
+
+func init() {
+	beego.BConfig.CopyRequestBody = true
 }
 
 func NewTester() *Tester{
