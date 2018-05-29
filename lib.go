@@ -108,6 +108,7 @@ func (t *Tester) Run(h func()) *Tester{
 	t.initContext(t.req,recover)
 	h()
 	t.resp = recover
+	t.control.Finish()
 	return t
 }
 
@@ -154,20 +155,6 @@ func (t *Tester) initContext(r *http.Request,rw http.ResponseWriter) {
 		ctx.Input.ParseFormOrMulitForm(beego.BConfig.MaxMemory)
 	}
 
-	// session init
-	if beego.BConfig.WebConfig.Session.SessionOn {
-		var err error
-		ctx.Input.CruSession, err = beego.GlobalSessions.SessionStart(rw, r)
-		if err != nil {
-			http.Error(rw, "Open Session Failed:" + err.Error(), 400)
-		}
-		defer func() {
-			if ctx.Input.CruSession != nil {
-				ctx.Input.CruSession.SessionRelease(rw)
-			}
-		}()
-	}
-
 	if splat := ctx.Input.Param(":splat"); splat != "" {
 		for k, v := range strings.Split(splat, "/") {
 			ctx.Input.SetParam(strconv.Itoa(k), v)
@@ -176,4 +163,6 @@ func (t *Tester) initContext(r *http.Request,rw http.ResponseWriter) {
 		//Invoke the request handler
 		//call the controller init function
 		t.control.Init(ctx, "", "", t.control)
+		t.control.Prepare()
+
 }
