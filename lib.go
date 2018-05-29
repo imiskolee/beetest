@@ -18,6 +18,10 @@ import (
 	"encoding/json"
 	"bytes"
 	"encoding/xml"
+	"reflect"
+	"github.com/astaxie/beego/context/param"
+	"github.com/astaxie/beego/toolbox"
+	"time"
 )
 
 type Tester struct {
@@ -25,6 +29,7 @@ type Tester struct {
 	ctx *context.Context
 	control beego.ControllerInterface
 	resp *httptest.ResponseRecorder
+	params map[string]string
 }
 
 func NewTester() *Tester{
@@ -37,7 +42,10 @@ func (t *Tester) Reset() *Tester{
 	t.resp = nil
 	return t
 }
-
+func (t *Tester) Params(p map[string]string) *Tester {
+	t.params = p
+	return t
+	}
 func (t *Tester) Controller(ctrl beego.ControllerInterface) *Tester {
 	t.control = ctrl
 	return t
@@ -160,9 +168,16 @@ func (t *Tester) initContext(r *http.Request,rw http.ResponseWriter) {
 			ctx.Input.SetParam(strconv.Itoa(k), v)
 		}
 	}
+	for k,v := range t.params {
+		ctx.Input.SetParam(k,v)
+	}
 		//Invoke the request handler
 		//call the controller init function
 		t.control.Init(ctx, "", "", t.control)
 		t.control.Prepare()
 
 }
+
+
+
+
