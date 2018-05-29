@@ -114,10 +114,21 @@ func (t *Tester) request(method string,path string,reader io.Reader,contentType 
 func (t *Tester) Run(h func()) *Tester{
 	recover := 	httptest.NewRecorder()
 	t.initContext(t.req,recover)
-	h()
+	t.run(h)
 	t.resp = recover
 	t.control.Finish()
 	return t
+}
+
+func (t *Tester) run(h func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			if err != beego.ErrAbort {
+				panic(err)
+			}
+		}
+	}()
+	h()
 }
 
 func (t *Tester) Response() *httptest.ResponseRecorder {
