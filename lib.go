@@ -106,7 +106,9 @@ func (t *Tester) Request(r *http.Request) *Tester {
 }
 
 func (t *Tester) request(method string,path string,reader io.Reader,contentType string) *Tester{
-	t.req ,_ = http.NewRequest(method,path,reader)
+	if t.req == nil{
+		t.req ,_ = http.NewRequest(method,path,reader)
+	}
 	t.req.Header.Set("Content-Type",contentType)
 	return t
 }
