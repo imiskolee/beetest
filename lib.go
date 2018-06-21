@@ -44,8 +44,9 @@ func (t *Tester) Reset() *Tester{
 	return t
 }
 
-func (t *Tester) Before(callback func(r *http.Request)) {
+func (t *Tester) Before(callback func(r *http.Request)) *Tester{
 	t.beforeCallback = callback
+	return t
 }
 
 func (t *Tester) Params(p map[string]string) *Tester {
