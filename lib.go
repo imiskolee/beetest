@@ -26,6 +26,7 @@ type Tester struct {
 	control beego.ControllerInterface
 	resp *httptest.ResponseRecorder
 	params map[string]string
+	beforeCallback func(req *http.Request)
 }
 
 func init() {
@@ -42,6 +43,11 @@ func (t *Tester) Reset() *Tester{
 	t.resp = nil
 	return t
 }
+
+func (t *Tester) Before(callback func(r *http.Request)) {
+	t.beforeCallback = callback
+}
+
 func (t *Tester) Params(p map[string]string) *Tester {
 	t.params = p
 	return t
@@ -112,6 +118,9 @@ func (t *Tester) request(method string,path string,reader io.Reader,contentType 
 }
 
 func (t *Tester) Run(h func()) *Tester{
+	if t.beforeCallback != nil {
+		t.beforeCallback(t.req)
+	}
 	recover := 	httptest.NewRecorder()
 	t.initContext(t.req,recover)
 	t.run(h)
