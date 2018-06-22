@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"bytes"
 	"encoding/xml"
+	"runtime"
 )
 
 type Tester struct {
@@ -26,7 +27,7 @@ type Tester struct {
 	control beego.ControllerInterface
 	resp *httptest.ResponseRecorder
 	params map[string]string
-	beforeCallback func(req *http.Request)
+	beforeCallback []func(req *http.Request)
 }
 
 func init() {
@@ -45,7 +46,7 @@ func (t *Tester) Reset() *Tester{
 }
 
 func (t *Tester) Before(callback func(r *http.Request)) *Tester{
-	t.beforeCallback = callback
+	t.beforeCallback = append(t.beforeCallback,callback)
 	return t
 }
 
@@ -69,7 +70,7 @@ func (t *Tester) Delete(uri string) *Tester {
 }
 
 func (t *Tester) PutJSON(uri string,body ...interface{}) *Tester {
-	var b *bytes.Buffer = nil
+	 b  := bytes.NewBufferString("")
 	if len(body) == 1 {
 		bo, _ := json.Marshal(body[0])
 		b = bytes.NewBuffer(bo)
@@ -78,9 +79,8 @@ func (t *Tester) PutJSON(uri string,body ...interface{}) *Tester {
 	return t
 }
 
-
 func (t *Tester) PutXML(uri string,body ...interface{}) *Tester {
-	var b *bytes.Buffer = nil
+	b  := bytes.NewBufferString("")
 	if len(body) == 1 {
 		bo, _ := xml.Marshal(body[0])
 		b = bytes.NewBuffer(bo)
@@ -90,7 +90,7 @@ func (t *Tester) PutXML(uri string,body ...interface{}) *Tester {
 }
 
 func (t *Tester) PostJSON(uri string,body ...interface{}) *Tester {
-	var b *bytes.Buffer = nil
+	b  := bytes.NewBufferString("")
 	if len(body) == 1 {
 		bo, _ := json.Marshal(body[0])
 		b = bytes.NewBuffer(bo)
@@ -99,7 +99,7 @@ func (t *Tester) PostJSON(uri string,body ...interface{}) *Tester {
 }
 
 func (t *Tester) PostXML(uri string,body ...interface{}) *Tester {
-	var b *bytes.Buffer = nil
+	b  := bytes.NewBufferString("")
 	if len(body) == 1 {
 		bo, _ := xml.Marshal(body[0])
 		b = bytes.NewBuffer(bo)
@@ -114,15 +114,23 @@ func (t *Tester) Request(r *http.Request) *Tester {
 
 func (t *Tester) request(method string,path string,reader io.Reader,contentType string) *Tester{
 	if t.req == nil{
-		t.req ,_ = http.NewRequest(method,path,reader)
+		 r,err := http.NewRequest(method,path,reader)
+		if err != nil {
+			panic("Can't create Request:%s" + err.Error())
+		}
+		t.req = r
 	}
 	t.req.Header.Set("Content-Type",contentType)
 	return t
 }
 
 func (t *Tester) Run(h func()) *Tester{
+	_,file,line,_ := runtime.Caller(1)
+	fmt.Printf("[BeeTest] Current Test: File=%s:%d %s %s\n",file,line,t.req.Method,t.req.RequestURI)
 	if t.beforeCallback != nil {
-		t.beforeCallback(t.req)
+		for _,v := range t.beforeCallback {
+			v(t.req)
+		}
 	}
 	recover := 	httptest.NewRecorder()
 	t.initContext(t.req,recover)
